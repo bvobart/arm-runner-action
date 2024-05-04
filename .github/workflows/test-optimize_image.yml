@@ -21,6 +21,21 @@ jobs:
         optimize_image: yes
         commands: |
             cat /dev/random > /rand || rm /rand
+    - name: Check if optimized image contains both the boot and root partitions
+      run: |
+        function assert_has_partition() {
+          if ! fdisk -l ${{ steps.optimized.outputs.image }} | grep "\.img$1.*$2"; then
+            echo "Test Failed! Missing partition $1: $2"
+            exit 1
+          else
+            echo "Test OK: found partition $1: $2"
+          fi
+        }
+
+        fdisk -l ${{ steps.optimized.outputs.image }}
+
+        assert_has_partition 1 "W95 FAT32"
+        assert_has_partition 2 "Linux"
     - name: Compress image
       id: compress
       run: |
@@ -41,6 +56,21 @@ jobs:
         optimize_image: no
         commands: |
             cat /dev/random > /rand || rm /rand
+    - name: Check if unoptimized image contains both the boot and root partitions
+      run: |
+        function assert_has_partition() {
+          if ! fdisk -l ${{ steps.unoptimized.outputs.image }} | grep "\.img$1.*$2"; then
+            echo "Test Failed! Missing partition $1: $2"
+            exit 1
+          else
+            echo "Test OK: found partition $1: $2"
+          fi
+        }
+
+        fdisk -l ${{ steps.unoptimized.outputs.image }}
+
+        assert_has_partition 1 "W95 FAT32"
+        assert_has_partition 2 "Linux"
     - name: Compress image
       id: compress
       run: |

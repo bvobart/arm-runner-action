@@ -37,16 +37,32 @@ if [[ -d "${mount}" ]]; then
         rootfs_partnum=${rootpartition}
         rootdev=$(ls "${loopdev}"*${rootfs_partnum})
 
+        echo "DEBUG: loopdev=${loopdev}"
+        echo "DEBUG: rootdev=${rootdev}"
+        echo "DEBUG: rootfs_partnum=${rootfs_partnum}"
+
         echo "Resizing root filesystem to minimal size."
         e2fsck -p -f "${rootdev}"
         resize2fs -M "${rootdev}"
         rootfs_blocksize=$(tune2fs -l ${rootdev} | grep "^Block size" | awk '{print $NF}')
         rootfs_blockcount=$(tune2fs -l ${rootdev} | grep "^Block count" | awk '{print $NF}')
 
+        echo "DEBUG: rootfs_blocksize=${rootfs_blocksize}"
+        echo "DEBUG: rootfs_blockcount=${rootfs_blockcount}"
+
         echo "Resizing rootfs partition."
         rootfs_partstart=$(parted -m --script "${loopdev}" unit B print | grep "^${rootfs_partnum}:" | awk -F ":" '{print $2}' | tr -d 'B')
         rootfs_partsize=$((${rootfs_blockcount} * ${rootfs_blocksize}))
         rootfs_partend=$((${rootfs_partstart} + ${rootfs_partsize}))
+
+        echo "DEBUG: rootfs_partstart=${rootfs_partstart}"
+        echo "DEBUG: rootfs_partsize=${rootfs_partsize}"
+        echo "DEBUG: rootfs_partend=${rootfs_partend}"
+
+        sudo df -a
+
+        echo "DEBUG: END"
+
         # parted --script "${loopdev}" unit B resizepart "${rootfs_partnum}" "${rootfs_partend}"
         # Can't use resizepart for shrinking with --script (parted bug#22167) => must rm then mkpart
         parted --script "${loopdev}" rm "${rootfs_partnum}"
